@@ -28,13 +28,37 @@ for (i in seq_along(file_list)) {
     # Process data
     summary <- process_data_joiners_leavers(raw_data_y1 = Raw_Data_y1,
                                             raw_data_y2 = Raw_Data_y2,
-                                            staff_group_code = nurse_staff_codes,
-                                            staff_group_name = 'Nurse',
-                                            summarization_variable = 'age')
+                                            staff_group_code = nursing_associate_codes,
+                                            staff_group_name = 'Nursing Associate',
+                                            summarization_variable = 'Nationality_grouping')
 
     # Write summary to CSV
-    write_csv(summary, paste0('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Nurse Data/R Outputs/Nurse by Age/',substr(Raw_Data_y1$`Tm Year Month`,1,8)[1],'.csv'))
+    write_csv(summary, paste0('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Nurse Data/R Outputs/Nursing Associate by Nationality/',substr(Raw_Data_y1$`Tm Year Month`,1,8)[1],'.csv'))
     
   }
 }
-file_list <- file_list[-1]
+
+
+file_list <- file_list[-1:-2]
+
+
+for (i in seq_along(file_list)) {
+  if (i < length(file_list)) {  # Ensure there is a next file to compare
+    # Read raw data for the current and next files
+    setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/wf/Cross-cutting work/Brexit/Nursing/LTP/PMIU work - 2019 elections/Tracking 50k/ESR Runs/All")
+    
+    Raw_Data_y1 <- read_csv(file_list[i])
+    
+    # Process data
+    summary <- process_stock(raw_data = Raw_Data_y1,
+                             staff_group_code = nursing_associate_codes,
+                             staff_group_name = 'Nursing Associate',
+                             summarization_variable = 'Nationality_grouping')
+                             
+
+    
+    # Write summary to CSV
+    write_csv(summary, paste0('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Nurse Data/R Outputs/Nursing Associate Stock/',substr(Raw_Data_y1$`Tm Year Month`,1,8)[1],'.csv'))
+    
+  }
+}

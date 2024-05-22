@@ -1,18 +1,56 @@
 # Script containing the majority of functions used
 
 library(tidyverse)
-source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables.R')
+source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/workforce_staff_codes.R')
 
 
 # Import Nationality and Org documents to be used in main analysis
 
-setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Nurse Data")
+setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Base Data")
 nationality <- read_csv("Nationality groupings.csv")
 NHS_orgs <- read_csv("Org Codes NHS Digital.csv")
 
 
 
-# Filter and flagging of desired staff group -----------------------------------
+#Staff Filter ------------------------------------------------------------------
+
+#' Staff Filter
+#'
+#' This function cleans the input data by filtering for the required staff type and performs additional actions depending on the summarization variable.
+#' @param raw_data A data frame containing the raw staff data.
+#' @param suffix The year suffix to add. If identifying joiners and leavers, use '_y1' or '_y2'.
+#' @param NHS_orgs_data A data frame containing all current trust organization codes, used to check if the staff member is working inside or outside of trusts.
+#' @param nationality_data A data frame containing the area in which each nationality is located. For example, India will be returned as Overseas.
+#' @param staff_group_code A vector of staff codes to filter for. Possible values are nurse_staff_codes or midwife_staff_codes.
+#' @param staff_group_name A character string for the staff group, referenced in later functions. Possible values are 'Nurse', 'Midwife', 'Medical', etc.
+#' @param summarization_variable A character string indicating the variable used for summarization. Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'. Default is 'Nationality_grouping'.
+#' @param headcount Logical. Default is FALSE. If TRUE, will convert the FTE of the data frame to 1 if above 0 to get a headcount rather than Full Time Equivalent.
+#' @param stock Logical. Default is FALSE. If TRUE, gets a snapshot of stock for a time period and does not add the suffix.
+#'
+#' @return A filtered data frame based on user input. Will append a suffix if identifying joiners and leavers.
+#' 
+#' @details
+#' The function performs the following operations:
+#' - Checks if a valid suffix is being used, only accepting '_y1' or '_y2' as it will impact later functions.
+#' - Replaces spaces in column names with '_' and joins the main dataset with NHS_orgs_data and nationality_data.
+#' - Creates a new column of Staff_group based on the provided staff_group_code. Filters to only the active staff.
+#' - Depending on the value of \code{summarization_variable}, performs additional transformations:
+#'   - If 'age' or 'age_group', calculates age based on the date of birth column and the current month (Tm_Month_Year).
+#'   - If 'age_group', creates a new column based on age groups.
+#'   - If 'region', creates a new column by grouped regions.
+#'   - If 'trust', creates a new column by the grouped trusts.
+#'   - If 'Ocs_Code', fills missing values in the 'Ocs_Code' column.
+#' - Adds a suffix to each column name if required.
+#' 
+#' @examples
+#' \dontrun{
+#' data_cleaned <- staff_filter(raw_data, suffix = '_y1', NHS_orgs_data = NHS_orgs, nationality_data = nationality, 
+#'                              staff_group_code = nurse_staff_codes, staff_group_name = 'Nurse', 
+#'                              summarization_variable = 'age', headcount = FALSE, stock = FALSE)
+#' }
+#'
+#' @import dplyr
+#' @export
 staff_filter <- function(raw_data,
                          suffix = 'none',
                          NHS_orgs_data = NHS_orgs,
@@ -22,6 +60,7 @@ staff_filter <- function(raw_data,
                          summarization_variable = 'Nationality_grouping',
                          headcount = FALSE,
                          stock = FALSE) {
+  print('Starting staff filter')
 
   # Check if suffix is 'none' or a valid suffix
   if (stock == FALSE && suffix != "none" && !(suffix %in% c('_y1' , '_y2'))) {
@@ -150,11 +189,39 @@ staff_filter <- function(raw_data,
 
 
 
+# Clean joined data ------------------------------------------------------------
 
-
-#Function for cleaning the joined data -----------------------------------------
+#' Clean Joined Data
+#'
+#' This function cleans the joined data by filling in missing values, combining nationality information, and performing other transformations based on a summarization variable.
+#'
+#' @param data A data frame containing the joined data.
+#' @param summarization_variable A character string indicating the variable used for summarization. Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'. Default is 'Nationality_grouping'.
+#'
+#' @return A cleaned data frame with transformed variables.
+#' 
+#' @details
+#' The function performs the following operations:
+#' - Fills and combines nationality information.
+#' - Creates a new variable 'Nationality_grouping_v2' based on 'Nationality_grouping'.
+#' - Fills missing values for 'NHSD_trust_or_CCG_y1' and 'NHSD_trust_or_CCG_y2'.
+#' - Depending on the value of \code{summarization_variable}, performs additional transformations:
+#'   - If 'age', assigns the age in years to the 'age' column and removes unnecessary columns.
+#'   - If 'age_group', assigns the age group and removes unnecessary columns.
+#'   - If 'region', fills missing values in the 'region' column.
+#'   - If 'trust', fills missing values in the 'trust' column.
+#'   - If 'Ocs_Code', fills missing values in the 'Ocs_Code' column.
+#'
+#' @examples
+#' \dontrun{
+#' data_cleaned <- clean_joined_data(data, summarization_variable = 'age')
+#' }
+#'
+#' @import dplyr
+#' @export
 
 clean_joined_data <- function(data, summarization_variable = 'Nationality_grouping') {
+  print('Cleaning joined data')
   
   #Fill and combine nationality
   data <- data %>%
@@ -200,13 +267,51 @@ clean_joined_data <- function(data, summarization_variable = 'Nationality_groupi
 
 
 
+# Joiner and leaver flags ------------------------------------------------------
 
-
-#Function for creating joiner and leaver flags ---------------------------------
-
+#' Joiner and Leaver Flags
+#'
+#' This function creates flags for joiners and leavers in the provided dataset. It identifies various categories of joiners and leavers based on the status and type of contract.
+#' 
+#' @param data A data frame that contains staff data with required columns such as Staff_group_y1, Staff_group_y2, Status_y1, Status_y2, NHSD_trust_or_CCG_y1, NHSD_trust_or_CCG_y2, and Contracted_Wte_y1, Contracted_Wte_y2.
+#' @param staff_group_name A character string indicating the staff group name to filter for. Possible values are 'Nurse', 'Midwife', 'Medical', etc.
+#' @param summarization_variable A character string indicating the variable used for summarization. Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'. Default is 'Nationality_grouping'.
+#'
+#' @return A data frame with additional columns for joiner and leaver flags, and FTE changes.
+#'
+#' @details
+#' The function performs the following operations:
+#' - Creates flags for various types of joiners and leavers based on the conditions of staff group, status, and organization type.
+#' - Calculates FTE changes for staff who remained active within the same staff group and organization type.
+#' - Overrides NA values in joiner and leaver flags with 0.
+#'
+#' The joiner flags include:
+#' - \code{joiner}: Staff who were not present in y1 but are active in y2 within the specified staff group and organization type.
+#' - \code{occ_joiner}: Staff who changed occupation to the specified staff group between y1 and y2.
+#' - \code{non_active_to_active}: Staff who became active in y2 within the specified staff group.
+#' - \code{nhs_provider_joiner}: Staff who joined from non-NHS provider to NHS provider within the specified staff group.
+#' - \code{other_joiner}: Staff who joined from non-specified staff group and non-NHS provider to the specified staff group and NHS provider.
+#'
+#' The leaver flags include:
+#' - \code{leaver}: Staff who were present in y1 but are not in y2 within the specified staff group and organization type.
+#' - \code{occ_leaver}: Staff who changed occupation from the specified staff group between y1 and y2.
+#' - \code{active_to_non_active}: Staff who became non-active in y2 within the specified staff group.
+#' - \code{nhs_provider_leaver}: Staff who left from NHS provider to non-NHS provider within the specified staff group.
+#' - \code{other_leaver}: Staff who left from the specified staff group and NHS provider to non-specified staff group and non-NHS provider.
+#'
+#' The function also calculates the FTE change (\code{FTE_change}) for staff who remained in the same staff group and organization type, and stayed active between y1 and y2.
+#'
+#' @examples
+#' \dontrun{
+#' data_with_flags <- joiner_leaver_flags(data, 'Nurse', summarization_variable = 'age')
+#' }
+#'
+#' @import dplyr
+#' @export
 joiner_leaver_flags <- function(data,
                                 staff_group_name,
                                 summarization_variable = 'Nationality_grouping') {
+  print('Creating joiner leaver flags')
   #joiner/ leaver flags
   data <- data %>%
     #joiner flags
@@ -242,7 +347,37 @@ joiner_leaver_flags <- function(data,
 
 # Function for cleaning stock data -----------------------------------
 
+#' Clean Stock Data
+#'
+#' This function cleans the provided staff data based on specified conditions and adds necessary grouping variables for summarization.
+#'
+#' @param data A data frame containing the staff data with necessary columns like Status, Staff_group, NHSD_trust_or_CCG, Unique_Nhs_Identifier, Nationality_grouping, and Ocs_Code.
+#' @param staff_code_name A character vector specifying the staff group names to filter for.
+#' @param summarization_variable A character string indicating the variable used for summarization. Possible values are 'region', 'trust', and 'age_group'.
+#'
+#' @return A cleaned data frame with additional columns for summarization based on the specified variable.
+#'
+#' @details
+#' The function performs the following operations:
+#' - Filters the data to include only active staff within the specified staff groups.
+#' - Further filters the data to include only rows where the organization is an NHS trust or CCG and the Unique NHS Identifier is not missing.
+#' - Replaces missing values in the Nationality_grouping column with 'Unknown'.
+#' - Creates a new column \code{Nationality_grouping_v2} with values 'Domestic', 'IR', or 'Other' based on the original Nationality_grouping.
+#' - Adds a new summarization variable based on the specified input. The possible summarization variables are:
+#'   - \code{region}: Groups data into different regions based on Ocs_Code.
+#'   - \code{trust}: Groups data into different trusts based on Ocs_Code.
+#'   - \code{age_group}: Groups data into age categories based on the age column.
+#'
+#' @examples
+#' \dontrun{
+#' cleaned_data <- clean_stock_data(data, c('Nurse', 'Midwife'), summarization_variable = 'region')
+#' }
+#'
+#' @import dplyr
+#' @export
+
 clean_stock_data <- function(data, staff_code_name, summarization_variable){
+  print('Cleaning data')
   
   data <- data %>%  filter(Status == 'Active')%>%
     filter(Staff_group %in% staff_code_name)
@@ -336,7 +471,29 @@ clean_stock_data <- function(data, staff_code_name, summarization_variable){
 
 #Function for overwriting Nationality to correct it in both time frames --------
 
+#' Overwrite Y1 Nationality
+#'
+#' This function overwrites the nationality grouping columns in year 1 with the values from year 2 if they are not missing.
+#'
+#' @param data A data frame containing the columns \code{Nationality_grouping_v2_y1}, \code{Nationality_grouping_v2_y2}, \code{Nationality_grouping_y1}, and \code{Nationality_grouping_y2}.
+#'
+#' @return A data frame with updated \code{Nationality_grouping_v2_y1_2} and \code{Nationality_grouping_v2_y1} columns.
+#'
+#' @details
+#' The function performs the following operations:
+#' - Creates a new column \code{Nationality_grouping_v2_y1_2} which takes the value of \code{Nationality_grouping_v2_y2} if it is not missing; otherwise, it retains the value from \code{Nationality_grouping_v2_y1}.
+#' - Updates the existing column \code{Nationality_grouping_v2_y1} with the value of \code{Nationality_grouping_y2} if it is not missing; otherwise, it retains the value from \code{Nationality_grouping_y1}.
+#'
+#' @examples
+#' \dontrun{
+#' updated_data <- overwrite_y1_nationality(data)
+#' }
+#'
+#' @import dplyr
+#' @export
+
 overwrite_y1_nationality <- function(data) {
+  print('Overwriting nationality')
   data$Nationality_grouping_v2_y1_2 <- ifelse(is.na(data$Nationality_grouping_v2_y2), 
                                               data$Nationality_grouping_v2_y1, 
                                               data$Nationality_grouping_v2_y2)
@@ -354,7 +511,32 @@ overwrite_y1_nationality <- function(data) {
 
 # Function for creating summaries based on 'summarization_variable' argument -------------
 
+#' Create Joiner Leaver Summary
+#'
+#' This function generates summaries based on the specified summarization variable, aggregating joiner and leaver data.
+#'
+#' @param data A data frame containing joiner and leaver flags along with the summarization variable.
+#' @param summarization_variable A character string indicating the variable used for summarization. Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'.
+#'
+#' @return A summarized data frame with joiner and leaver statistics aggregated based on the specified summarization variable.
+#'
+#' @details
+#' The function performs the following operations:
+#' - Calculates total joiners, leavers, and FTE changes across all categories.
+#' - Splits the data by the summarization variable and calculates joiners, leavers, and FTE changes for each category.
+#' - If the summarization variable is 'Nationality_grouping', it further generates summaries for nationality smaller groups.
+#' - Converts the 'age' variable to character type if the summarization variable is 'age'.
+#'
+#' @examples
+#' \dontrun{
+#' summary_data <- create_joiner_leaver_summary(data, summarization_variable = 'Nationality_grouping')
+#' }
+#'
+#' @import dplyr
+#' @export
+
 create_joiner_leaver_summary <- function(data, summarization_variable) {
+  print('Creating summary')
   # Total summaries
   #Total joiners/ leavers
   summary <- data %>%
@@ -434,7 +616,35 @@ create_joiner_leaver_summary <- function(data, summarization_variable) {
 
 
 # Function for creating summary of stock ---------------------------------------
+#' Create Stock Summary
+#'
+#' This function generates a summary of stock based on the specified summarization variable.
+#'
+#' @param data A data frame containing stock data.
+#' @param summarization_variable A character string indicating the variable used for summarization. Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'.
+#'
+#' @return A summarized data frame with total Full-Time Equivalent (FTE) and, if applicable, FTE breakdown by the specified summarization variable.
+#'
+#' @details
+#' The function performs the following operations:
+#' - If the summarization variable is 'Nationality_grouping', it generates three sets of summaries: 
+#'   - FTE by nationality groups for each year and month.
+#'   - FTE by the refined nationality grouping for each year and month.
+#'   - Total FTE for each year and month, with an additional row representing the total FTE for all nationalities.
+#' - If the summarization variable is not 'Nationality_grouping', it calculates the total FTE for each category.
+#' - If the summarization variable is 'age', it converts the 'age' variable to a character type.
+#'
+#' @examples
+#' \dontrun{
+#' stock_summary <- create_stock_summary(data, summarization_variable = 'Nationality_grouping')
+#' }
+#'
+#' @import dplyr
+#' @export
+
+
 create_stock_summary <- function(data, summarization_variable){
+  print('Creating summary')
   if (summarization_variable == 'Nationality_grouping') {
     
     #nationality split
@@ -492,8 +702,36 @@ create_stock_summary <- function(data, summarization_variable){
   
   
 # Function for the FTE of y1 ---------------------------------------------------
+#' FTE of Year 1
+#'
+#' This function calculates the Full-Time Equivalent (FTE) for Year 1 based on the specified summarization variable.
+#'
+#' @param data A data frame containing the relevant data.
+#' @param staff_group_name A character string indicating the staff group name.
+#' @param summarization_variable A character string indicating the variable used for summarization. Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'.
+#'
+#' @return A data frame with FTE values for Year 1, categorized by the specified summarization variable.
+#'
+#' @details
+#' The function performs the following operations:
+#' - If the summarization variable is 'Nationality_grouping', it generates three sets of summaries:
+#'   - Total FTE for Year 1 for all nationalities.
+#'   - FTE by refined nationality grouping for Year 1.
+#'   - FTE by nationality groups for Year 1.
+#' - If the summarization variable is not 'Nationality_grouping', it calculates the total FTE for Year 1 for each category.
+#' - If the summarization variable is 'age', it renames the summarization variable to 'age' from 'age_y1'.
+#'
+#' @examples
+#' \dontrun{
+#' fte_y1 <- fte_y1_function(data, staff_group_name = 'example_staff_group', summarization_variable = 'Nationality_grouping')
+#' }
+#'
+#' @import dplyr
+#' @export
+
 
 fte_y1_function <- function(data, staff_group_name, summarization_variable){
+  print('Getting FTE')
   #FTE - year 1
   #total
   if (summarization_variable == 'Nationality_grouping'){
@@ -555,7 +793,37 @@ fte_y1_function <- function(data, staff_group_name, summarization_variable){
 
 
 # Function for the FTE of Y2 ---------------------------------------------------
+
+#' FTE of Year 2
+#'
+#' This function calculates the Full-Time Equivalent (FTE) for Year 2 based on the specified summarization variable.
+#'
+#' @param data A data frame containing the relevant data.
+#' @param staff_group_name A character string indicating the staff group name.
+#' @param summarization_variable A character string indicating the variable used for summarization. 
+#' Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'.
+#'
+#' @return A data frame with FTE values for Year 2, categorized by the specified summarization variable.
+#'
+#' @details
+#' The function performs the following operations:
+#' - If the summarization variable is 'Nationality_grouping', it generates three sets of summaries:
+#'   - Total FTE for Year 2 for all nationalities.
+#'   - FTE by refined nationality grouping for Year 2.
+#'   - FTE by nationality groups for Year 2.
+#' - If the summarization variable is not 'Nationality_grouping', it calculates the total FTE for Year 2 for each category.
+#' - If the summarization variable is 'age', it renames the summarization variable to 'age' from 'age_y2'.
+#'
+#' @examples
+#' \dontrun{
+#' fte_y2 <- fte_y2_function(data, staff_group_name = 'example_staff_group', summarization_variable = 'Nationality_grouping')
+#' }
+#'
+#' @import dplyr
+#' @export
+
 fte_y2_function <- function(data, staff_group_name, summarization_variable){
+  print('Getting FTE')
   if (summarization_variable == 'Nationality_grouping'){
     #FTE - year 2
     #total
@@ -613,7 +881,40 @@ fte_y2_function <- function(data, staff_group_name, summarization_variable){
   }
 }
 
+# Function for combining summary groups ----------------------------------------
+
+#' Combine Summary Groups
+#'
+#' This function combines summary groups and calculates leaver rates and occupational leaver rates.
+#'
+#' @param summary A data frame containing the summary data.
+#' @param fte_y1 A data frame containing the Full-Time Equivalent (FTE) values for Year 1.
+#' @param fte_y2 A data frame containing the FTE values for Year 2.
+#' @param summarization_variable A character string indicating the variable used for summarization. 
+#' Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'.
+#' @param data A data frame containing the relevant data.
+#'
+#' @return A melted data frame with combined summary groups, including leaver rates and occupational leaver rates.
+#'
+#' @details
+#' The function performs the following operations:
+#' - Merges FTE values for Year 1 and Year 2 into the summary data frame based on the specified summarization variable.
+#' - Calculates leaver rates and occupational leaver rates.
+#' - Melts the summary data frame to long format for easy visualization.
+#' - Extracts year-month strings from the data frame.
+#' - Renames columns of the pivot data frame.
+#'
+#' @examples
+#' \dontrun{
+#' combined_summary <- summary_fte_combine(summary, fte_y1, fte_y2, summarization_variable = 'Nationality_grouping', data)
+#' }
+#'
+#' @import dplyr
+#' @import tidyr
+#' @export
+
 summary_fte_combine <- function(summary, fte_y1, fte_y2, summarization_variable, data) {
+  print('Combining summary')
   # Merge fte_y1 into summary
   summary <- merge(summary, fte_y1, by = summarization_variable)
   
@@ -649,6 +950,7 @@ summary_fte_combine <- function(summary, fte_y1, fte_y2, summarization_variable,
 # Function for adding pins
 
 nmc_pin_cleaning <- function(data) {
+  print('Starting PIN cleaning')
   convert_to_number <- function(letter) {
     if (toupper(letter) %in% LETTERS[1:12]) {
       return(match(toupper(letter), LETTERS[1:12]))
@@ -737,6 +1039,42 @@ nmc_pin_cleaning <- function(data) {
 ###############################   MAIN RUNS    #################################
 # Code for comparing two time periods and joiners and leavers ------------------
 
+#' Process Data for Joiners and Leavers
+#'
+#' This function processes raw data for joiners and leavers, performing various data manipulations and generating summaries.
+#'
+#' @param raw_data_y1 A data frame containing the raw data for Year 1.
+#' @param raw_data_y2 A data frame containing the raw data for Year 2.
+#' @param staff_group_code A character string specifying the staff group code.
+#' @param staff_group_name A character string specifying the staff group name.
+#' @param summarization_variable A character string indicating the variable used for summarization. 
+#' Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'.
+#' @param headcount A logical value indicating whether to include headcount data (default is FALSE).
+#'
+#' @return A melted data frame with combined summary groups, including leaver rates and occupational leaver rates.
+#'
+#' @details
+#' The function performs the following operations:
+#' - Reads and preprocesses auxiliary data files, including nationality groupings and NHS organization codes.
+#' - Filters raw data based on staff group code, staff group name, and summarization variable.
+#' - Renames Unique_Nhs_Identifier columns and removes duplicates.
+#' - Joins Year 1 and Year 2 datasets, fills unknowns for nationality, and creates joiner and leaver flags.
+#' - Starts summaries and calculates Full-Time Equivalent (FTE) values for Year 1 and Year 2.
+#' - Combines leavers, joiners, and FTE values into a single data frame.
+#' - Removes unnecessary objects.
+#'
+#' @examples
+#' \dontrun{
+#' processed_data <- process_data_joiners_leavers(raw_data_y1, raw_data_y2, staff_group_code, staff_group_name, summarization_variable = 'Nationality_grouping')
+#' }
+#'
+#' @import dplyr
+#' @import tidyr
+#' @import readr
+#' @importFrom utils setwd
+#' @export
+
+
 process_data_joiners_leavers <- function(raw_data_y1, raw_data_y2, staff_group_code, staff_group_name, summarization_variable, headcount = FALSE) {
   # Step 1: Start the data manipulation
   # Rename columns in nationality
@@ -788,6 +1126,41 @@ process_data_joiners_leavers <- function(raw_data_y1, raw_data_y2, staff_group_c
   
   return(pivot)
 }
+
+# Function to process stock ----------------------------------------------------
+
+#' Process Stock Data
+#'
+#' This function processes raw stock data, performing various data manipulations and generating summaries.
+#'
+#' @param raw_data A data frame containing the raw stock data.
+#' @param staff_group_code A character string specifying the staff group code.
+#' @param staff_group_name A character string specifying the staff group name.
+#' @param summarization_variable A character string indicating the variable used for summarization. 
+#' Possible values are 'Nationality_grouping', 'age', 'age_group', 'region', 'trust', and 'Ocs_Code'.
+#' @param headcount A logical value indicating whether to include headcount data (default is FALSE).
+#' @param stock A logical value indicating whether the data is related to stock (default is TRUE).
+#'
+#' @return A summarized data frame based on the specified summarization variable.
+#'
+#' @details
+#' The function performs the following operations:
+#' - Reads and preprocesses auxiliary data files, including nationality groupings and NHS organization codes.
+#' - Calls the staff_filter function to filter raw data based on staff group code, staff group name, and summarization variable.
+#' - Cleans the filtered stock data.
+#' - Generates a summary of the stock data based on the specified summarization variable.
+#'
+#' @examples
+#' \dontrun{
+#' processed_stock_data <- process_stock(raw_stock_data, staff_group_code, staff_group_name, summarization_variable = 'Nationality_grouping')
+#' }
+#'
+#' @import dplyr
+#' @import tidyr
+#' @import readr
+#' @importFrom utils setwd
+#' @export
+
 
 process_stock <- function(raw_data, staff_group_code, staff_group_name, summarization_variable, headcount = FALSE, stock = TRUE) {
   # Step 1: Start the data manipulation

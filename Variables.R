@@ -68,10 +68,11 @@ occ_codes <- function() {
                           "NEH", "P2B", "P2E", "P2C", "P2D", "P3C", "P3D", "P3E", "N7J", "N1A", "NNN", 'P2A', 'P3A')
   
   nursing_associate_codes <<- c('NGA', 'NGB', 'NGC', 'NGD', 'NGE', 'NGF', 'NGG', 'NGH',
-                                'NFA', 'NFB', 'NFC', 'NFD', 'NFE', 'NFF', 'NFG', 'NFH', 'NFJ', 'NFK', 'NFL',
-                                'NHA', 'NHB', 'NHC', 'NHD', 'NHE', 'NHF', 'NHG', 'NHH',
-                                'N8A', 'N8B', 'N8C', 'N8D', 'N8E', 'N8F', 'N8G', 'N8H', 'N8K', 'N8L',
-                                'N9A', 'N9B', 'N9C', 'N9D', 'N9E', 'N9F', 'N9G', 'N9H', 'N9J', 'N9K', 'N9L')
+                                'NHA', 'NHB', 'NHC', 'NHD', 'NHE', 'NHF', 'NHG', 'NHH')
+  
+  nurse_support_codes <<- c('NFA', 'NFB', 'NFC', 'NFD', 'NFE', 'NFF', 'NFG', 'NFH', 'NFJ', 'NFK', 'NFL',
+                            'N8A', 'N8B', 'N8C', 'N8D', 'N8E', 'N8F', 'N8G', 'N8H', 'N8K', 'N8L',
+                            'N9A', 'N9B', 'N9C', 'N9D', 'N9E', 'N9F', 'N9G', 'N9H', 'N9J', 'N9K', 'N9L')
   
   
   nurse_health_visitor_codes <<- c("N3H")
@@ -1816,6 +1817,7 @@ medical_staff_hospital_codes <-rev(na.omit(rev(workforce_staff_codes$medical_sta
 midwife_staff_codes <-rev(na.omit(rev(workforce_staff_codes$midwife_staff_codes)))
 nurse_health_visitor_codes<- rev(na.omit(rev(workforce_staff_codes$nurse_health_visitor_codes)))
 nurse_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_staff_codes)))
+nurse_support_codes <- rev(na.omit(rev(workforce_staff_codes$nurse_support_codes)))
 nursing_associate_codes <-rev(na.omit(rev(workforce_staff_codes$nursing_associate_codes)))
 physical_science_staff_codes <-rev(na.omit(rev(workforce_staff_codes$physical_science_staff_codes)))
 physical_science_support_codes<- rev(na.omit(rev(workforce_staff_codes$physical_science_support_codes)))
