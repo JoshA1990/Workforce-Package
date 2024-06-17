@@ -4,17 +4,48 @@
 library(tidyverse)
 
 #Import the custom function package
-source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions.R')
+source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions/Main Processing.R')
 
 
 # Select which working directory you want, with or without PINS
 getwd()
 #setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/wf/Cross-cutting work/Brexit/Nursing/NMC PINS/ESR records with PINS")
-# Set working directory
+# Set working directory for normal
 setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/wf/Cross-cutting work/Brexit/Nursing/LTP/PMIU work - 2019 elections/Tracking 50k/ESR Runs/All")
+
+# Set working directory for pins
+setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/wf/Cross-cutting work/Brexit/Nursing/NMC PINS/ESR records with PINS")
+
 
 # Get list of CSV files
 file_list <- list.files(pattern = '*.csv')
+
+Raw_Data_y1 <- read_csv(file_list[40])
+Raw_Data_y2 <- read_csv(file_list[41])
+
+
+summary <- process_pin_joiners(raw_data_y1 = Raw_Data_y1,
+                               raw_data_y2 = Raw_Data_y2,
+                               staff_group_code = nurse_staff_codes,
+                               staff_group_name = 'Nurse',
+                               pin_summary_variable = 'age',
+                               uk_nqn = TRUE)
+                               
+
+
+
+
+
+
+
+file_list <- file_list[-1:-2]
+
+
+
+
+
+
+
 
 # Loop over each pair of consecutive files
 for (i in seq_along(file_list)) {
@@ -23,17 +54,17 @@ for (i in seq_along(file_list)) {
     setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/wf/Cross-cutting work/Brexit/Nursing/LTP/PMIU work - 2019 elections/Tracking 50k/ESR Runs/All")
     
     Raw_Data_y1 <- read_csv(file_list[i])
-    Raw_Data_y2 <- read_csv(file_list[i + 1])
+    Raw_Data_y2 <- read_csv(file_list[i + 12])
     
     # Process data
     summary <- process_data_joiners_leavers(raw_data_y1 = Raw_Data_y1,
                                             raw_data_y2 = Raw_Data_y2,
-                                            staff_group_code = nursing_associate_codes,
-                                            staff_group_name = 'Nursing Associate',
-                                            summarization_variable = 'Nationality_grouping')
+                                            staff_group_code = nurse_staff_codes,
+                                            staff_group_name = 'Nurse',
+                                            summarization_variable = 'age')
 
     # Write summary to CSV
-    write_csv(summary, paste0('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Nurse Data/R Outputs/Nursing Associate by Nationality/',substr(Raw_Data_y1$`Tm Year Month`,1,8)[1],'.csv'))
+    write_csv(summary, paste0('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Nurse Data/R Outputs/Nurse Joiners by Age Yearly/',substr(Raw_Data_y1$`Tm Year Month`,1,8)[1],'.csv'))
     
   }
 }
