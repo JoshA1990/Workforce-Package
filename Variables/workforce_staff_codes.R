@@ -35,3 +35,22 @@ public_science_support_codes <- rev(na.omit(rev(workforce_staff_codes$public_sci
 scientific_staff_codes <- rev(na.omit(rev(workforce_staff_codes$scientific_staff_codes)))
 scientific_support_staff_codes<- rev(na.omit(rev(workforce_staff_codes$scientific_support_staff_codes)))
 support_allied_staff_codes <-rev(na.omit(rev(workforce_staff_codes$support_allied_staff_codes)))
+nurse_adult_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_adult_staff_codes)))
+nurse_children_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_children_staff_codes)))
+nurse_maternity_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_maternity_staff_codes)))
+nurse_community_mental_health_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_community_mental_health_staff_codes)))
+nurse_other_mental_health_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_other_mental_health_staff_codes)))
+nurse_community_learning_difficulties_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_community_learning_difficulties_staff_codes)))
+nurse_other_learning_difficulties_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_other_learning_difficulties_staff_codes)))
+nurse_community_service_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_community_service_staff_codes)))
+nurse_education_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_education_staff_codes)))
+nurse_school_nursing_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_school_nursing_staff_codes)))
+nurse_neonatal_staff_codes <-rev(na.omit(rev(workforce_staff_codes$nurse_neonatal_staff_codes)))
+nurse_learner_staff_codes <- rev(na.omit(rev(workforce_staff_codes$nurse_learner_staff_codes)))
+
+
+
+
+
+
+

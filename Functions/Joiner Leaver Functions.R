@@ -1,4 +1,6 @@
 
+
+
 #Staff Filter ------------------------------------------------------------------
 
 #' Staff Filter
@@ -99,8 +101,7 @@ staff_filter <- function(raw_data,
     }
   }
   if (summarization_variable == 'region' & stock == FALSE){
-    source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/org_region_codes.R')
-    
+    source(paste0(here("Variables"),"/org_region_codes.R"))
     raw_data <- raw_data %>%
       mutate(region = case_when(is.na(Ocs_Code) ~ "Unknown",
                                 Ocs_Code %in% orgs_region_east_england ~ "East England",
@@ -114,8 +115,7 @@ staff_filter <- function(raw_data,
   }
   
   if (summarization_variable == 'trust' & stock == FALSE) {
-    source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/org_trust_codes.R')
-    
+    source(paste0(here("Variables"),"/org_trust_codes.R"))
     raw_data <- raw_data %>%
       mutate(trust = case_when(is.na(Ocs_Code) ~ 'Unknown',
                                        Ocs_Code %in% orgs_bath_somerset_swindon_and_wiltshire ~ 'Bath, Somerset, Swindon and Wiltshire',
@@ -162,6 +162,24 @@ staff_filter <- function(raw_data,
                                        TRUE ~ 'NA'))
   }
   
+  if (summarization_variable == 'branch'){
+    raw_data <- raw_data %>%
+      mutate(branch = case_when(is.na(Occupation_Code) ~ NA,
+                                Occupation_Code %in% nurse_adult_staff_codes ~ "Adult Nursing",
+                                Occupation_Code %in% nurse_children_staff_codes ~ "Children's Nurse",
+                                Occupation_Code %in% nurse_maternity_staff_codes ~ "Maternity Nurse",
+                                Occupation_Code %in% nurse_community_mental_health_staff_codes ~ "Community Mental Health Nurse",
+                                Occupation_Code %in% nurse_other_mental_health_staff_codes ~ "Other Mental Health Nurse",
+                                Occupation_Code %in% nurse_community_learning_difficulties_staff_codes ~ "Community Learning Difficulties Nurse",
+                                Occupation_Code %in% nurse_other_learning_difficulties_staff_codes ~ "Other Learning Difficulties Nurse",
+                                Occupation_Code %in% nurse_community_service_staff_codes ~ "Community Service Nurse",
+                                Occupation_Code %in% nurse_education_staff_codes ~ "Educational Nurse",
+                                Occupation_Code %in% nurse_school_nursing_staff_codes ~ "School Nurse",
+                                Occupation_Code %in% nurse_neonatal_staff_codes ~ "Neonatal Nurse",
+                                Occupation_Code %in% nurse_learner_staff_codes ~ "Nurse Learner",
+                                TRUE ~ NA))
+      
+  }
   
   if (headcount == TRUE) {
     raw_data <- raw_data %>%
@@ -236,20 +254,6 @@ clean_joined_data <- function(data, summarization_variable = 'Nationality_groupi
       select(-c(Date_y1, Date_y2, age_y1, age_y2, age_group_y1, age_group_y2))
   }
   
-  if (summarization_variable == 'region'){
-    #override NA's in region data, assigning joining region, leaving region and non movers
-    data <- data %>% mutate(region = if_else(is.na(region_y2) == TRUE, region_y1, region_y2))
-  }
-  
-  if (summarization_variable == 'trust'){
-    data <- data %>% mutate(trust = if_else(is.na(trust_y2) == TRUE, trust_y1, trust_y2))
-    
-  }
-  
-  if (summarization_variable == 'Ocs_Code'){
-    data <- data %>% mutate(Ocs_Code = if_else(is.na(Ocs_Code_y2) == TRUE, Ocs_Code_y1, Ocs_Code_y2))
-    
-  }
   
   return(data)
 }
@@ -320,12 +324,43 @@ joiner_leaver_flags <- function(data,
     #FTE change
     mutate(FTE_change = if_else(Staff_group_y2 == staff_group_name & Staff_group_y1 == staff_group_name & Status_y1 == "Active" & Status_y2 == "Active" & NHSD_trust_or_CCG_y1 == "1" & NHSD_trust_or_CCG_y2 == "1", Contracted_Wte_y2-Contracted_Wte_y1, 0))
   
+  
   #override NAs in joiner/ leaver flags
   data <- data %>%
     mutate (nhs_provider_joiner = if_else(is.na(nhs_provider_joiner)==FALSE,nhs_provider_joiner,0)) %>%
     mutate (other_joiner = if_else(is.na(other_joiner)==FALSE,other_joiner,0)) %>%
     mutate (nhs_provider_leaver = if_else(is.na(nhs_provider_leaver)==FALSE,nhs_provider_leaver,0)) %>%
     mutate (other_leaver = if_else(is.na(other_leaver)==FALSE,other_leaver,0))
+  
+  if (summarization_variable == 'branch'){
+    data <- data %>%
+      mutate(branch = case_when(joiner != 0 ~ branch_y2,
+                                TRUE ~ branch_y1))%>%
+      mutate(branch = if_else(is.na(branch), if_else(is.na(branch_y1), branch_y2, branch_y1), branch))
+  }
+  
+  if (summarization_variable == 'region'){
+    data <- data %>% 
+      mutate(region = case_when(joiner != 0 ~ region_y2,
+                                TRUE ~ region_y1))%>%
+      mutate(region = if_else(is.na(region), if_else(is.na(region_y1), region_y2, region_y1), region))
+    
+  }
+  
+  if (summarization_variable == 'trust'){
+    data <- data %>%
+      mutate(trust = case_when(joiner != 0 ~ trust_y2,
+                               TRUE ~ trust_y1))%>%
+      mutate(trust = if_else(is.na(trust), if_else(is.na(trust_y1), trust_y2, trust_y1), trust))
+    
+  }
+  
+  if (summarization_variable == 'Ocs_Code'){
+    data <- data %>%
+      mutate(Ocs_Code = case_when(joiner != 0 ~ Ocs_Code_y2,
+                                  TRUE ~ Ocs_Code_y1))%>%
+      mutate(Ocs_Code = if_else(is.na(Ocs_Code), if_else(is.na(Ocs_Code_y1), Ocs_Code_y2, Ocs_Code_y1), Ocs_Code))
+  }
   
   return(data)
 }

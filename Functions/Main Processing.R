@@ -1,5 +1,5 @@
 
-
+library(here)
 
 
 ###############################   MAIN RUNS    #################################
@@ -38,6 +38,7 @@
 #' @import tidyr
 #' @import readr
 #' @importFrom utils setwd
+#' @import here
 #' @export
 
 
@@ -47,12 +48,14 @@ process_data_joiners_leavers <- function(raw_data_y1,
                                          staff_group_name,
                                          summarization_variable,
                                          headcount = FALSE) {
-  source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions/Joiner Leaver Functions.R')
-  source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/workforce_staff_codes.R')
+  source(paste0(here("Functions"), "/Joiner Leaver Functions.R"))
+  source(paste0(here("Variables"), "/workforce_staff_codes.R"))
+  #source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions/Joiner Leaver Functions.R')
+  #source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/workforce_staff_codes.R')
   
   # Step 1: Start the data manipulation
   # Rename columns in nationality
-  setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Data")
+  setwd(here("Data"))
   nationality <- read_csv("Nationality groupings.csv")
   NHS_orgs <- read_csv("ORG Codes NHS Digital.csv")
   colnames(nationality) <- gsub("[ ]", "_", colnames(nationality), perl=TRUE)
@@ -137,14 +140,15 @@ process_data_joiners_leavers <- function(raw_data_y1,
 
 
 process_stock <- function(raw_data, staff_group_code, staff_group_name, summarization_variable, headcount = FALSE, stock = TRUE) {
-  source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions/Joiner Leaver Functions.R')
-  source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions/Stock Functions.R')
-  source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/workforce_staff_codes.R')
+  #Pull in the sources using the here library
+  source(paste0(here("Functions"),"/Joiner Leaver Functions.R"))
+  source(paste0(here("Functions"),"/Stock Functions.R"))
+  source(paste0(here("Variables"),"/workforce_staff_codes.R"))
   
   
   # Step 1: Start the data manipulation
   # Load and preprocess nationality data
-  setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Data")
+  setwd(here("Data"))
   nationality <- read_csv("Nationality groupings.csv")
   NHS_orgs <- read_csv("Org Codes NHS Digital.csv")
   colnames(nationality) <- gsub("[ ]", "_", colnames(nationality), perl=TRUE)
@@ -211,10 +215,13 @@ process_stock <- function(raw_data, staff_group_code, staff_group_name, summariz
 
 
 process_pin_joiners <- function(raw_data_y1, raw_data_y2, staff_group_code, staff_group_name, summarization_variable = 'Nationality_grouping', headcount = TRUE, pin_summary_variable = NULL, uk_nqn = FALSE) {
-  source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions/Joiner Leaver Functions.R')
-  source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions/PIN Functions.R')
-  source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/workforce_staff_codes.R')
-  
+  source(paste0(here("Functions"),"/Joiner Leaver Functions.R"))
+  source(paste0(here("Functions"),"/PIN Functions.R"))
+  source(paste0(here("Variables"),"/workforce_staff_codes.R"))
+  # source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions/Joiner Leaver Functions.R')
+  # source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Functions/PIN Functions.R')
+  # source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/workforce_staff_codes.R')
+  # 
   # Check if 'staff_group_code' is within the predefined sets of codes
   check_staff_group_code <- function(staff_group_code_name) {
     if (!(staff_group_code_name %in% c("nurse_staff_codes", "midwife_staff_codes"))) {
@@ -242,7 +249,7 @@ process_pin_joiners <- function(raw_data_y1, raw_data_y2, staff_group_code, staf
   
   # Step 1: Start the data manipulation
   # Rename columns in nationality
-  setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Data")
+  setwd(here("Data"))
   nationality <- read_csv("Nationality groupings.csv")
   NHS_orgs <- read_csv("ORG Codes NHS Digital.csv")
   colnames(nationality) <- gsub("[ ]", "_", colnames(nationality), perl=TRUE)
@@ -295,9 +302,10 @@ process_pin_joiners <- function(raw_data_y1, raw_data_y2, staff_group_code, staf
 
 
 process_nurse_trust <- function(staff_group_code, staff_group_name) {
-  source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/workforce_staff_codes.R')
+  source(paste0(here("Variables"), "/workforce_staff_codes.R"))
+  #source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/workforce_staff_codes.R')
   #reading in the base data
-  setwd("C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Data")
+  setwd(here("Data"))
   nationality <- read_csv('Nationality groupings.csv')
   NHS_orgs <- read_csv('Org Codes NHS Digital.csv')
   

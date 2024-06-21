@@ -1,4 +1,4 @@
-
+library(here)
 
 # Function for cleaning stock data -----------------------------------
 
@@ -29,6 +29,7 @@
 #' }
 #'
 #' @import dplyr
+#' @import here
 #' @export
 
 clean_stock_data <- function(data, staff_code_name, summarization_variable){
@@ -43,7 +44,8 @@ clean_stock_data <- function(data, staff_code_name, summarization_variable){
     mutate (Nationality_grouping_v2 = if_else(Nationality_grouping %in% c('UK','Unknown'),'Domestic',
                                               if_else(Nationality_grouping %in% c('EU','ROW'),'IR','Other')))
   if (summarization_variable == 'region') {
-    source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/org_region_codes.R')
+    source(paste0(here("Variables"), "/org_region_codes.R"))
+    #source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/org_region_codes.R')
     
     data <- data %>%
       mutate(region = case_when(is.na(Ocs_Code) ~ "Unknown",
@@ -59,7 +61,8 @@ clean_stock_data <- function(data, staff_code_name, summarization_variable){
   }
   
   if (summarization_variable == 'trust') {
-    source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/org_trust_codes.R')
+    source(paste0(here("Variables"), "/org_trust_codes.R"))
+    #source('C:/Users/Josh.Andrews/OneDrive - Department of Health and Social Care/Documents/R Codes/Workforce-Package/Variables/org_trust_codes.R')
     
     data <- data %>%
       mutate(trust = case_when(is.na(Ocs_Code) ~ 'Unknown',
